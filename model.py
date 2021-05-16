@@ -5,6 +5,7 @@ from tensorflow.keras.layers import (LSTM, BatchNormalization, Bidirectional,
 from tensorflow.keras.models import Model
 
 from config import configs
+from metrics import CERMetric
 
 
 class CTCLayer(Layer):
@@ -76,7 +77,7 @@ def build_crnn_model():
     # Define the model
     model = Model(inputs=[input_img, labels], outputs=output, name="ocr_model_crnn")
     # Optimizer
-    opt = tf.keras.optimizers.Adam(lr=configs.LR)
+    opt = tf.keras.optimizers.Adam(lr=configs.LR, metrics=[CERMetric()])
     # Compile the model and return
     model.compile(optimizer=opt)
     return model
