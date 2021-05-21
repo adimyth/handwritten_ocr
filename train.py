@@ -3,22 +3,22 @@ import random
 from glob import glob
 from itertools import chain
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import tensorflow as tf
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import (CSVLogger, EarlyStopping,
+import matplotlib.pyplot as plt # type: ignore
+import numpy as np # type: ignore
+import pandas as pd # type: ignore
+import tensorflow as tf # type: ignore
+from sklearn.metrics import accuracy_score # type: ignore
+from sklearn.model_selection import train_test_split # type: ignore
+from tensorflow.keras.callbacks import (CSVLogger, EarlyStopping, # type: ignore
                                         ModelCheckpoint)
-from tensorflow.keras.models import Model
-from tqdm import tqdm
+from tensorflow.keras.models import Model # type: ignore
+from tqdm import tqdm # type: ignore
 
 from config import configs
 from dataset import OCRDataset
 from model import build_crnn_model
-from utils import get_score, plot_hist
+from utils import plot_hist
+from metrics import get_mean_lev_score, get_mean_cer_score
 
 
 class OCRCRNNTrainer:
@@ -102,17 +102,17 @@ class OCRCRNNTrainer:
         self.model = build_crnn_model()
 
     def load_df(self):
-        df = pd.read_csv("data/train/ocr-crnn-train-word-split-250-600/train.csv")[
+        df = pd.read_csv("data/train/train.csv")[
             ["Path", "Labels"]
         ]
         df["Path"] = df["Path"].apply(
-            lambda x: f"data/train/ocr-crnn-train-word-split-250-600/images/{x}"
+            lambda x: f"data/train/images/{x}"
         )
         df = df.loc[df["Labels"].str.len() <= configs.MAX_LENGTH]
         print(f"Total Data: {df.shape}")
         return df
 
-    def split_data(df):
+    def split_data(self, df):
         X_train, X_valid, y_train, y_valid = train_test_split(
             df["Path"],
             df["Labels"],
@@ -132,18 +132,18 @@ class OCRCRNNTrainer:
         df = self.load_df()
         X_train, y_train, X_valid, y_valid, X_test, y_test = self.split_data(df)
         self.train_dataset = self.dataset.get_dataset(X_train, y_train)
-        self.valid_dataset = self.dataset.get_dataset(X_valid, y_valid)
+        self.validation_dataset = self.dataset.get_dataset(X_valid, y_valid)
         self.test_dataset = self.dataset.get_dataset(X_test, y_test)
 
     def train(self):
         self.load_data()
         # EarlyStopping
         early_stopping = EarlyStopping(
-            monitor="val_loss", patience=3, restore_best_weights=True
+            monitor="val_loss", patience=5, restore_best_weights=True
         )
         # ModelCheckpoint
         model_checkpoint = ModelCheckpoint(
-            filepath="f{configs.EXP_NAME}_model_checkpoints/",
+            filepath=f"{configs.EXP_NAME}_model_checkpoint",
             save_weights_only=False,
             monitor="val_loss",
             mode="min",
@@ -160,9 +160,9 @@ class OCRCRNNTrainer:
             callbacks=[early_stopping, model_checkpoint, csv_logger],
         )
         self.model.save(f"{configs.EXP_NAME}_model.h5")
-        # plot_hist(history)
+        plot_hist(history)
 
-    def decode_batch_predictions(self, pred):
+    def decode_batch_predictions_greedy(self, pred):
         input_len = np.ones(pred.shape[0]) * pred.shape[1]
         # Use greedy search. For complex tasks, you can use beam search
         results = tf.keras.backend.ctc_decode(
@@ -175,7 +175,21 @@ class OCRCRNNTrainer:
             output_text.append(res)
         return output_text
 
-    def get_all_preds(self, dataset, prediction_model):
+    def decode_batch_predictions_beamsearch(self, pred):
+        input_len = np.ones(pred.shape[0]) * pred.shape[1]
+        # Use greedy search. For complex tasks, you can use beam search
+        results = tf.keras.backend.ctc_decode(
+            pred, input_length=input_len, greedy=False,
+            beam_width=10, top_k_paths=1
+        )[0][0][:, : configs.MAX_LENGTH]
+        # Iterate over the results and get back the text
+        output_text = []
+        for res in results:
+            res = tf.strings.reduce_join(self.num_to_char(res)).numpy().decode("utf-8")
+            output_text.append(res)
+        return output_text
+
+    def get_all_preds(self, dataset, prediction_model, greedy=True):
         """
         Utility function that returns both model prediction & actual labels
         """
@@ -185,7 +199,10 @@ class OCRCRNNTrainer:
             batch_labels = batch["label"]
 
             preds = prediction_model.predict(batch_images)
-            pred_texts = self.decode_batch_predictions(preds)
+            if greedy:
+                pred_texts = self.decode_batch_predictions_greedy(preds)
+            else:
+                pred_texts = self.decode_batch_predictions_beamsearch(preds)
             # handling UNK & MASK token
             pred_texts = [
                 x.replace(self.unk_token, "").replace(self.mask_token, "")
@@ -219,32 +236,23 @@ class OCRCRNNTrainer:
         train_decoded_text, train_actuals_text = self.get_all_preds(
             self.train_dataset, self.prediction_model
         )
-        print(
-            f"Training Accuracy: {accuracy_score(train_actuals_text, train_decoded_text):.5f}"
-        )
-        print(
-            f"Training Mean Levenshtein Distance: {get_score(train_actuals_text, train_decoded_text):.5f}"
-        )
+        print(f"Training Accuracy: {accuracy_score(train_actuals_text, train_decoded_text):.5f}")
+        print(f"Training Mean Levenshtein Distance: {get_mean_lev_score(train_actuals_text, train_decoded_text):.5f}")
+        print(f"Training Mean CER Score: {get_mean_cer_score(train_actuals_text, train_decoded_text):.5f}")
 
         valid_decoded_text, valid_actuals_text = self.get_all_preds(
             self.validation_dataset, self.prediction_model
         )
-        print(
-            f"Validation Accuracy: {accuracy_score(valid_actuals_text, valid_decoded_text):.5f}"
-        )
-        print(
-            f"Validation Mean Levenshtein Distance: {get_score(valid_actuals_text, valid_decoded_text):.5f}"
-        )
+        print(f"Validation Accuracy: {accuracy_score(valid_actuals_text, valid_decoded_text):.5f}")
+        print(f"Validation Mean Levenshtein Distance: {get_mean_lev_score(valid_actuals_text, valid_decoded_text):.5f}")
+        print(f"Validation Mean CER Score: {get_mean_cer_score(valid_actuals_text, valid_decoded_text):.5f}")
 
         test_decoded_text, test_actuals_text = self.get_all_preds(
             self.test_dataset, self.prediction_model
         )
-        print(
-            f"Test Accuracy: {accuracy_score(test_actuals_text, test_decoded_text):.5f}"
-        )
-        print(
-            f"Test Mean Levenshtein Distance: {get_score(test_actuals_text, test_decoded_text):.5f}"
-        )
+        print(f"Test Accuracy: {accuracy_score(test_actuals_text, test_decoded_text):.5f}")
+        print(f"Test Mean Levenshtein Distance: {get_mean_lev_score(test_actuals_text, test_decoded_text):.5f}")
+        print(f"Test Mean CER Score: {get_mean_cer_score(test_actuals_text, test_decoded_text):.5f}")
 
 
 if __name__ == "__main__":

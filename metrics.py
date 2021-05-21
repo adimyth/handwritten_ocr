@@ -1,37 +1,22 @@
-import tensorflow as tf
-import tensorflow.keras.backend as K
+import Levenshtein # type: ignore
+import fastwer # type: ignore
+import numpy as np # type: ignore
 
 
-class CERMetric(tf.keras.metrics.Metric):
+def get_mean_lev_score(y_true: list, y_pred: list):
     """
-    A custom Keras metric to compute the Character Error Rate
+    Returns mean Levenshtein Distance.
     """
+    scores = []
+    for true, pred in zip(y_true, y_pred):
+        score = Levenshtein.distance(true, pred)
+        scores.append(score)
+    avg_score = np.mean(scores)
+    return avg_score
 
-    def __init__(self, name="CER_metric", **kwargs):
-        super(CERMetric, self).__init__(name=name, **kwargs)
-        self.cer_accumulator = self.add_weight(name="total_cer", initializer="zeros")
-        self.counter = self.add_weight(name="cer_count", initializer="zeros")
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        input_shape = K.shape(y_pred)
-        input_length = tf.ones(shape=input_shape[0]) * K.cast(input_shape[1], "float32")
-
-        decode, log = K.ctc_decode(y_pred, input_length, greedy=True)
-
-        decode = K.ctc_label_dense_to_sparse(decode[0], K.cast(input_length, "int32"))
-        y_true_sparse = K.ctc_label_dense_to_sparse(
-            y_true, K.cast(input_length, "int32")
-        )
-
-        decode = tf.sparse.retain(decode, tf.not_equal(decode.values, -1))
-        distance = tf.edit_distance(decode, y_true_sparse, normalize=True)
-
-        self.cer_accumulator.assign_add(tf.reduce_sum(distance))
-        self.counter.assign_add(len(y_true))
-
-    def result(self):
-        return tf.math.divide_no_nan(self.cer_accumulator, self.counter)
-
-    def reset_states(self):
-        self.cer_accumulator.assign(0.0)
-        self.counter.assign(0.0)
+def get_mean_cer_score(y_true: list, y_pred: list):
+    """
+    Returns CER Score for the Corpus.
+    """
+    return fastwer.score(y_pred, y_true, char_level=True)

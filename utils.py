@@ -1,6 +1,4 @@
-import Levenshtein
-import matplotlib.pyplot as plt
-import numpy as np
+import matplotlib.pyplot as plt # type: ignore
 
 
 def plot_hist(hist):
@@ -12,12 +10,3 @@ def plot_hist(hist):
     plt.xlabel("Epoch")
     plt.legend(["Train", "Validation"], loc="upper left")
     plt.show()
-
-
-def get_score(y_true, y_pred):
-    scores = []
-    for true, pred in zip(y_true, y_pred):
-        score = Levenshtein.distance(true, pred)
-        scores.append(score)
-    avg_score = np.mean(scores)
-    return avg_score
