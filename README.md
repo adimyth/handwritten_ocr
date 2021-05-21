@@ -68,8 +68,37 @@ poetry run python eval.py
 Supports *Greedy* as well *Beam Search Decoding* based on choice. Set `greedy=False` in `make_submission` function for BeamSearch Decoding.
 
 ## Result
+I ran multiple experiments with varying degrees of image size, model depth, number of epoch, etc. The following configuration worked the best -
+
+* BATCH_SIZE - 16
+* EPOCHS - 20
+* IMG_HEIGHT - 250
+* IMG_WIDTH - 600
+* MAX_LENGTH - 10
+
+### Word Level - Training & Validation Loss
+![](resources/losses.png)
+
+### Word Level - Training & Validation Data Prediction
+![](resources/predictions.png)
+
+### Test Data Prediction
+![](resources/TestDataPrediction.png)
+
+### Other Metrics
+| Metric | Training | Validation |
+--- | --- | ---
+|Accuracy|0.5474|0.5382|
+|Levenhstein Distance|0.8808|0.9122|
+
+### Kaggle LeaderBoard
 *Public LeaderBoard*
 ![Public LeaderBoard](resources/public_lb.png)
 
 *Private LeaderBoard*
 ![Private LeaderBoard](resources/private_lb.png)
+
+## Next Steps
+1. Train Deeper Model
+2. Add Spatial Transformer Network Component
+3. Centering the image somehow didn't work
