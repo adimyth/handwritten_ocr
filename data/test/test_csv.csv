@@ -1,0 +1,19 @@
+Path,Splits,NumSplits
+../input/arya-hw-lines/test/test/r07-568z-05.tif,"[0, 1, 2, 3, 4, 5]",6
+../input/arya-hw-lines/test/test/r07-568z-07.tif,"[6, 7, 8, 9, 10, 11, 12]",7
+../input/arya-hw-lines/test/test/r08-612z-05.tif,"[13, 14, 15, 16, 17, 18, 19]",7
+../input/arya-hw-lines/test/test/p07-917z-05.tif,"[20, 21, 22, 23, 24]",5
+../input/arya-hw-lines/test/test/r02-091z-01.tif,"[25, 26, 27, 28]",4
+../input/arya-hw-lines/test/test/r09-699z-01.tif,"[29, 30, 31, 32, 33, 34, 35]",7
+../input/arya-hw-lines/test/test/p09-116z-04.tif,"[36, 37, 38, 39, 40, 41, 42, 43]",8
+../input/arya-hw-lines/test/test/p08-996z-05.tif,"[44, 45, 46, 47, 48, 49, 50]",7
+../input/arya-hw-lines/test/test/z01-010a-01.tif,"[51, 52]",2
+../input/arya-hw-lines/test/test/r08-625z-02.tif,"[53, 54, 55]",3
+../input/arya-hw-lines/test/test/r08-599z-04.tif,"[56, 57, 58, 59, 60, 61, 62]",7
+../input/arya-hw-lines/test/test/r08-592z-01.tif,"[63, 64, 65, 66, 67, 68]",6
+../input/arya-hw-lines/test/test/r06-441z-06.tif,"[69, 70, 71, 72, 73]",5
+../input/arya-hw-lines/test/test/r09-676z-02.tif,"[74, 75, 76, 77, 78, 79]",6
+../input/arya-hw-lines/test/test/r08-592z-03.tif,"[80, 81, 82, 83, 84, 85]",6
+../input/arya-hw-lines/test/test/r04-330z-05.tif,"[86, 87, 88, 89, 90]",5
+../input/arya-hw-lines/test/test/r09-705z-04.tif,"[91, 92, 93, 94, 95]",5
+../input/arya-hw-lines/test/test/r07-475z-05.tif,"[96, 97, 98, 99]",4
