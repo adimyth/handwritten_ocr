@@ -93,7 +93,7 @@ class Predictor:
         img = np.expand_dims(img, axis=0)
         return {"image": img.tolist(), "label": ""}
 
-    def decode_batch_predictions_greedy(self, pred):
+    def decode_predictions_greedy(self, pred):
         """
         Greedy Decoding
         """
@@ -141,6 +141,5 @@ if __name__ == "__main__":
         headers = {"content-type": "application/json"}
         # Send the request to the Prediction API
         response = requests.post(endpoint, data=json_data, headers=headers)
-        st.write(response.text)
-        prediction = tf.argmax(response.json()["predictions"][0])
+        prediction = predictor.decode_predictions_greedy(response.json()["predictions"][0])[0]
         st.success(f"Prediction: {prediction}")
