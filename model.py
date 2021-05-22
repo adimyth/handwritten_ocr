@@ -40,35 +40,35 @@ def build_crnn_model() -> Model:
     labels = Input(name="label", shape=(None,), dtype="float32")
 
     # First conv block
-    x = Conv2D(32, (3, 3), activation="relu", padding="same", name="conv_1")(input_img)
-    x = Conv2D(64, (3, 3), activation="relu", padding="same", name="conv_2")(x)
-    x = Conv2D(128, (3, 3), activation="relu", padding="same", name="conv_3")(x)
+    x = Conv2D(16, (3, 3), activation="relu", padding="same", name="conv_1")(input_img)
+    x = Conv2D(32, (3, 3), activation="relu", padding="same", name="conv_2")(x)
+    x = Conv2D(64, (3, 3), activation="relu", padding="same", name="conv_3")(x)
     x = BatchNormalization(name="bn_1")(x)
     x = MaxPooling2D((2, 2), name="pool1")(x)
 
     # Second conv block
-    x = Conv2D(128, (3, 3), activation="relu", padding="same", name="conv_4")(x)
-    x = Conv2D(256, (3, 3), activation="relu", padding="same", name="conv_5")(x)
+    x = Conv2D(64, (3, 3), activation="relu", padding="same", name="conv_4")(x)
+    x = Conv2D(128, (3, 3), activation="relu", padding="same", name="conv_5")(x)
     x = BatchNormalization(name="bn_2")(x)
     x = MaxPooling2D((2, 2), name="pool2")(x)
 
     # Third conv block
-    x = Conv2D(256, (3, 3), activation="relu", padding="same", name="conv_6")(x)
-    x = Conv2D(256, (3, 3), activation="relu", padding="same", name="conv_7")(x)
+    x = Conv2D(128, (3, 3), activation="relu", padding="same", name="conv_6")(x)
+    x = Conv2D(128, (3, 3), activation="relu", padding="same", name="conv_7")(x)
     x = BatchNormalization(name="bn_3")(x)
 
     # We have used two max pool with pool size and strides of 2.
     # Hence, downsampled feature maps are 4x smaller. The number of
     # filters in the last layer is 64. Reshape accordingly before
     # passing it to RNNs
-    new_shape = ((configs.IMG_WIDTH // 4), (configs.IMG_HEIGHT // 4) * 256)
+    new_shape = ((configs.IMG_WIDTH // 4), (configs.IMG_HEIGHT // 4) * 128)
     x = Reshape(target_shape=new_shape, name="reshape")(x)
-    x = Dense(128, activation="relu", name="dense1")(x)
+    x = Dense(64, activation="relu", name="dense1")(x)
     x = Dropout(0.2)(x)
 
     # RNNs
-    x = Bidirectional(LSTM(128, return_sequences=True, dropout=0.2))(x)
     x = Bidirectional(LSTM(64, return_sequences=True, dropout=0.2))(x)
+    x = Bidirectional(LSTM(32, return_sequences=True, dropout=0.2))(x)
 
     # Output layer
     x = Dense(55, activation="softmax", name="dense2")(x)
