@@ -67,8 +67,6 @@ class Predictor:
             "[",
             "!",
         ]
-        self.unk_token = "[UNK]"
-        self.mask_token = "]"
         # Mapping characters to integers
         char_to_num = tf.keras.layers.experimental.preprocessing.StringLookup(
             vocabulary=list(self.characters), num_oov_indices=0, mask_token=None
@@ -84,12 +82,10 @@ class Predictor:
         """
         # 1. Resize to the desired size
         img = tf.image.resize(img, [250, 600])
-        st.write(f"Resized Image: {img.numpy().shape}")
         # 2. Transpose the image because we want the time
         # dimension to correspond to the width of the image.
         img = tf.transpose(img, perm=[1, 0, 2])
-        st.write(f"Encoded Image: {img.numpy().shape}")
-        return {"image": img.numpy().tolist(), "label": 0}
+        return img.numpy().tolist()
 
     def decode_predictions(self, pred):
         """
@@ -111,7 +107,7 @@ if __name__ == "__main__":
     predictor = Predictor()
     endpoint = "http://localhost:8501/v1/models/handwritten_ocr:predict"
     st.title("Handwritten OCR - TensorFlow Serving")
-    st.subheader("Write Something ...")
+
     canvas_result = st_canvas(
         height=300,
         width=800,
@@ -130,11 +126,8 @@ if __name__ == "__main__":
         st.image(rescaled)
 
     if st.button("Predict"):
-        st.write(f"Canvas Image: {img.shape}")
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2GRAY)  # (300, 800)
-        st.write(f"Greyscaled Image: {img.shape}")
         img = img.reshape(img.shape[0], img.shape[1], 1)  # (300, 800, 1)
-        st.write(f"Psedudo Dimension: {img.shape}")
         input_data = np.expand_dims(predictor.encode_single_sample(img), axis=0)
 
         # Prepare the data that is going to be sent in the POST request
@@ -144,7 +137,5 @@ if __name__ == "__main__":
         response = requests.post(endpoint, data=json_data, headers=headers)
         interim = np.array(response.json()["predictions"][0])
         prediction = predictor.decode_predictions(np.expand_dims(interim, axis=0))[0]
-        prediction = prediction.replace(predictor.unk_token, "").replace(
-            predictor.mask_token, ""
-        )
+        prediction = prediction.replace("[UNK]", "").replace("]", "")
         st.success(f"Prediction: {prediction}")
