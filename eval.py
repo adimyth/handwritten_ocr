@@ -1,9 +1,9 @@
 import ast
 
-import numpy as np # type: ignore
-import pandas as pd # type: ignore
-import tensorflow as tf # type: ignore
-from tqdm import tqdm # type: ignore
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
+import tensorflow as tf  # type: ignore
+from tqdm import tqdm  # type: ignore
 
 from config import configs
 
@@ -77,7 +77,7 @@ class OCRCRNNPredictor:
         self.num_to_char = tf.keras.layers.experimental.preprocessing.StringLookup(
             vocabulary=char_to_num.get_vocabulary(), invert=True, mask_token=None
         )
-        model = tf.keras.models.load_model(f"{configs.EXP_NAME}_model_checkpoint")
+        model = tf.keras.models.load_model(f"saved_model/1/")
         self.prediction_model = tf.keras.models.Model(
             model.get_layer(name="image").input, model.get_layer(name="dense2").output
         )
@@ -121,8 +121,11 @@ class OCRCRNNPredictor:
         """
         input_len = np.ones(pred.shape[0]) * pred.shape[1]
         results = tf.keras.backend.ctc_decode(
-            pred, input_length=input_len, greedy=False,
-            beam_width=beam_width, top_k_paths=1
+            pred,
+            input_length=input_len,
+            greedy=False,
+            beam_width=beam_width,
+            top_k_paths=1,
         )[0][0][:, : configs.MAX_LENGTH]
         # Iterate over the results and get back the text
         output_text = []

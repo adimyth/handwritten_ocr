@@ -1,6 +1,6 @@
-import Levenshtein # type: ignore
-import fastwer # type: ignore
-import numpy as np # type: ignore
+import fastwer  # type: ignore
+import Levenshtein  # type: ignore
+import numpy as np  # type: ignore
 
 
 def get_mean_lev_score(y_true: list, y_pred: list):

@@ -1,8 +1,9 @@
-import tensorflow as tf # type: ignore
-from tensorflow.keras.layers import (LSTM, BatchNormalization, Bidirectional, # type: ignore
-                                     Conv2D, Dense, Dropout, Input, Layer,
-                                     MaxPooling2D, Reshape)
-from tensorflow.keras.models import Model # type: ignore
+import tensorflow as tf  # type: ignore
+from tensorflow.keras.layers import Bidirectional  # type: ignore
+from tensorflow.keras.layers import (LSTM, BatchNormalization, Conv2D, Dense,
+                                     Dropout, Input, Layer, MaxPooling2D,
+                                     Reshape)
+from tensorflow.keras.models import Model  # type: ignore
 
 from config import configs
 

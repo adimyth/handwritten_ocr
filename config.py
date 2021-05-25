@@ -1,4 +1,4 @@
-from attrdict import AttrDict # type: ignore
+from attrdict import AttrDict  # type: ignore
 
 configs = {
     "SEED": 42,

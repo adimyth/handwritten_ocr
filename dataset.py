@@ -1,4 +1,4 @@
-import tensorflow as tf # type: ignore
+import tensorflow as tf  # type: ignore
 
 from config import configs
 

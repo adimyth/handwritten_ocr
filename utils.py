@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
 
 def plot_hist(hist):
