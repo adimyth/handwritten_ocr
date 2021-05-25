@@ -169,3 +169,28 @@ response = requests.post(endpoint, data=json_data, headers=headers)
 prediction = tf.argmax(response.json()["predictions"][0])
 print(f"Prediction: {prediction}")
 ```
+
+### Multilple Versions
+Here, I am serving multiple models. Create a `models.config` file with the following content -
+
+```bash
+model_config_list: {
+    config: {
+        name: "handwritten_ocr",
+        base_path: "/models/handwritten_ocr/",
+        model_platform: "tensorflow",
+        model_version_policy: {specific: {versions: 1, versions: 2}}
+    }
+}
+```
+Then pass this filepath as an argument when creating docker container -
+
+```bash
+docker run -d --name tfserving -p 8501:8501 \
+  -v "$PWD/saved_model:/models/handwritten_ocr" \
+  -v "$PWD/models.config:/models/models.config" \
+  -e MODEL_NAME=handwritten_ocr -t tensorflow/serving --model_config_file=/models/models.config
+```
+
+* HealtCheck URL - http://localhost:8501/v1/models/handwritten_ocr/versions/<version_number>
+* Prediction URL - http://localhost:8501/v1/models/handwritten_ocr/versions/<version_number>:predict
