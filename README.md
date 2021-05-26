@@ -150,23 +150,25 @@ A sample script which reads data from [Streamlit Drawable Canvas](https://github
 
 ```python
 import streamlit as st
+import streamlit_drawable_canvas as st_canvas
 
 # Code to add drawable canvas. Refer link above
-canvas_result = ...
+canvas_result = st_canvas(...)
 
-# Read image & resize it
-img = cv2.resize(canvas_result.image_data.astype("uint8"), (28, 28))
-# Convert to grayscale
-test_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-# Add an additional dimension
-test_img = test_img.reshape(1, 28, 28, 1)
+# Read data
+img = canvas_result.image_data
+
+# Do something with the data
+...
 
 # Prepare headers & data to be sent in the POST request
-json_data = json.dumps({"instances": test_img.tolist()})
+json_data = json.dumps({"instances": img.tolist()})
 headers = {"content-type": "application/json"}
 # Send the request to the Prediction API
 response = requests.post(endpoint, data=json_data, headers=headers)
-prediction = tf.argmax(response.json()["predictions"][0])
+
+# Decode the prediction
+prediction = magic_decode_recipe(response.json()["predictions"])
 print(f"Prediction: {prediction}")
 ```
 
