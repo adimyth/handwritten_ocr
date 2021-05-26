@@ -1,11 +1,11 @@
 import json
 
-import matplotlib.pyplot as plt # type: ignore
-import numpy as np # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
+import numpy as np  # type: ignore
 import requests
-import streamlit as st # type: ignore
-import tensorflow as tf # type: ignore
-from PIL import Image # type: ignore
+import streamlit as st  # type: ignore
+import tensorflow as tf  # type: ignore
+from PIL import Image  # type: ignore
 
 
 class Predictor:
@@ -104,20 +104,25 @@ class Predictor:
         # Iterate over the results and get back the text
         output_text = []
         for res in results:
-            res = tf.strings.reduce_join(self.num_to_char(res)).numpy().decode("utf-8")
+            # Hack - res+1 below due to shift in char-num mapping. [UNK] token is responsible
+            res = (
+                tf.strings.reduce_join(self.num_to_char(res + 1))
+                .numpy()
+                .decode("utf-8")
+            )
             output_text.append(res)
-        st.write(f"Output Text: {len(output_text)}")
         return output_text
 
 
 if __name__ == "__main__":
     predictor = Predictor()
+
+    # file uploader
     st.title("Handwritten OCR - TensorFlow Serving")
     uploaded_file = st.file_uploader(label="Upload Image", type=["jpg", "png"])
 
-    version = st.sidebar.selectbox(
-        "Select Version", ("Version 1", "Version 2", "Version 3")
-    )
+    # sidebar
+    version = st.sidebar.selectbox("Select Version", ("Version 1", "Version 2"))
     endpoint = f"http://localhost:8501/v1/models/handwritten_ocr/versions/{version.split()[1]}:predict"
 
     if uploaded_file:
@@ -130,6 +135,7 @@ if __name__ == "__main__":
         else:
             # saving image temporarily
             plt.imshow(img.convert("RGB"))  # saving as RGB
+            plt.axis("off")
             plt.savefig("temp.png")
             input_data = np.expand_dims(predictor.encode_single_sample(img), axis=0)
 
