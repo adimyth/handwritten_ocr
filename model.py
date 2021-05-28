@@ -1,8 +1,17 @@
 import tensorflow as tf  # type: ignore
 from tensorflow.keras.layers import Bidirectional  # type: ignore
-from tensorflow.keras.layers import (LSTM, BatchNormalization, Conv2D, Dense,
-                                     Dropout, Input, Layer, MaxPooling2D,
-                                     Reshape)
+from tensorflow.keras.layers import (
+    LSTM,
+    BatchNormalization,
+    Conv2D,
+    Dense,
+    Dropout,
+    Input,
+    Layer,
+    LeakyReLU,
+    MaxPooling2D,
+    Reshape,
+)
 from tensorflow.keras.models import Model  # type: ignore
 
 from config import configs
@@ -30,9 +39,110 @@ class CTCLayer(Layer):
         return y_pred
 
 
-def build_crnn_model() -> Model:
+def build_crnn_model():
     """
-    Returns a CRNN model with CTC layer at the end
+    Are Multidimensional Recurrent Layers Really Necessary for Handwritten Text Recognition?
+    http://www.jpuigcerver.net/pubs/jpuigcerver_icdar2017.pdf
+    """
+    # Inputs to the model
+    input_img = Input(
+        shape=(configs.IMG_WIDTH, configs.IMG_HEIGHT, 1), name="image", dtype="float32"
+    )
+    labels = Input(name="label", shape=(None,), dtype="float32")
+
+    # ConvBlock 1 - Conv -> BatchNorm -> LeakyReLU -> MaxPool
+    x = Conv2D(16, (3, 3), padding="same", name="conv1")(input_img)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+    x = MaxPooling2D((2, 2))(x)
+
+    # ConvBlock 2 - Conv -> BatchNorm -> LeakyReLU -> MaxPool
+    x = Conv2D(32, (3, 3), padding="same", name="conv2")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+    x = MaxPooling2D((2, 2))(x)
+
+    # ConvBlock 3 - Dropout -> Conv -> BatchNorm -> LeakyReLU -> MaxPool
+    x = Dropout(0.2)(x)
+    x = Conv2D(48, (3, 3), padding="same", name="conv3")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+    x = MaxPooling2D((2, 2))(x)
+
+    # ConvBlock 4 - Dropout -> Conv -> BatchNorm -> LeakyReLU
+    x = Dropout(0.2)(x)
+    x = Conv2D(64, (3, 3), padding="same", name="conv4")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # ConvBlock 5 - Dropout -> Conv -> BatchNorm -> LeakyReLU
+    x = Dropout(0.2)(x)
+    x = Conv2D(80, (3, 3), padding="same", name="conv5")(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU()(x)
+
+    # Columnwise Concatenation
+    # 3 MaxPools with pool size and strides 2. Hence feature maps are 8x smaller.
+    # Number of filters in last conv block - 80.
+    # Reshape accordingly before passing the output to the RNN part of the model
+    new_shape = ((configs.IMG_WIDTH // 8), (configs.IMG_HEIGHT // 8) * 80)
+    x = Reshape(target_shape=new_shape, name="reshape")(x)
+
+    # RNNBlock 1 - concatenating the output of forward & backward hidden states
+    x = Dropout(0.5)(x)
+    x = Bidirectional(
+        LSTM(256, return_sequences=True), merge_mode="concat", name="rnn1"
+    )(x)
+
+    # RNNBlock 2
+    x = Dropout(0.5)(x)
+    x = Bidirectional(
+        LSTM(256, return_sequences=True), merge_mode="concat", name="rnn2"
+    )(x)
+
+    # RNNBlock 3
+    x = Dropout(0.5)(x)
+    x = Bidirectional(
+        LSTM(256, return_sequences=True), merge_mode="concat", name="rnn3"
+    )(x)
+
+    # RNNBlock 4
+    x = Dropout(0.5)(x)
+    x = Bidirectional(
+        LSTM(256, return_sequences=True), merge_mode="concat", name="rnn4"
+    )(x)
+
+    # RNNBlock 5
+    x = Dropout(0.5)(x)
+    x = Bidirectional(
+        LSTM(256, return_sequences=True), merge_mode="concat", name="rnn5"
+    )(x)
+
+    # Linear layer - additional characters for UNK, MASK
+    x = Dropout(0.5)(x)
+    x = Dense(54 + 3, activation="softmax", name="output")(x)
+
+    # Add CTC layer for calculating CTC loss at each step
+    output = CTCLayer(name="ctc_loss")(labels, x)
+
+    # Define the model
+    model = tf.keras.models.Model(
+        inputs=[input_img, labels], outputs=output, name="ocr_model_crnn"
+    )
+
+    # Optimizer
+    opt = tf.keras.optimizers.RMSprop(learning_rate=configs.LR)
+
+    # Compile the model and return
+    model.compile(optimizer=opt)
+    return model
+
+
+def build_model() -> Model:
+    """
+    An End-to-End Trainable Neural Network for Image-based Sequence
+    Recognition and Its Application to Scene Text Recognition
+    https://arxiv.org/pdf/1507.05717.pdf
     """
     # Inputs to the model
     input_img = Input(
@@ -72,7 +182,7 @@ def build_crnn_model() -> Model:
     x = Bidirectional(LSTM(32, return_sequences=True, dropout=0.2))(x)
 
     # Output layer
-    x = Dense(55, activation="softmax", name="dense2")(x)
+    x = Dense(55, activation="softmax", name="output")(x)
 
     # Add CTC layer for calculating CTC loss at each step
     output = CTCLayer(name="ctc_loss")(labels, x)

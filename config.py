@@ -4,10 +4,10 @@ configs = {
     "SEED": 42,
     "IMG_HEIGHT": 250,
     "IMG_WIDTH": 600,
-    "EPOCHS": 20,
+    "EPOCHS": 1,
     "BATCH_SIZE": 16,
-    "LR": 0.001,
+    "LR": 0.0003,
     "MAX_LENGTH": 8,
-    "EXP_NAME": "crnn_v1",
+    "EXP_NAME": "ocr_crnn",
 }
 configs = AttrDict(configs)

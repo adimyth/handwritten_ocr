@@ -226,7 +226,7 @@ class OCRCRNNTrainer:
     def infer_all(self):
         self.prediction_model = Model(
             self.model.get_layer(name="image").input,
-            self.model.get_layer(name="dense2").output,
+            self.model.get_layer(name="output").output,
         )
         train_decoded_text, train_actuals_text = self.get_all_preds(
             self.train_dataset, self.prediction_model

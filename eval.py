@@ -77,9 +77,9 @@ class OCRCRNNPredictor:
         self.num_to_char = tf.keras.layers.experimental.preprocessing.StringLookup(
             vocabulary=char_to_num.get_vocabulary(), invert=True, mask_token=None
         )
-        model = tf.keras.models.load_model(f"saved_model/1/")
+        model = tf.keras.models.load_model(f"{configs.EXP_NAME}_model_checkpoint")
         self.prediction_model = tf.keras.models.Model(
-            model.get_layer(name="image").input, model.get_layer(name="dense2").output
+            model.get_layer(name="image").input, model.get_layer(name="output").output
         )
 
     def encode_single_sample(self, img_path):

@@ -1,4 +1,4 @@
-# Case Independent Handwritten Line Recognition
+# [Case Independent Handwritten Line Recognition](https://www.kaggle.com/c/arya-hw-lines)
 
 ## Description
 The goal of the competition is to create a model that correctly recognizes the handwritten text line present in the image.
@@ -31,7 +31,28 @@ Since labels are not available for test data, we cannot use the above technique.
 * [Word Level Test Data - 300x600](https://www.kaggle.com/aditya08/ocr-crnn-test-word-split-300-600)
 ![](resources/word_level_test_data.png)
 
-## CRNN
+## [Are Multidimensional Recurrent Layers Really Necessary for Handwritten Text Recognition?](http://www.jpuigcerver.net/pubs/jpuigcerver_icdar2017.pdf)
+
+### Architecture
+**Convolutional Blocks**: 5 convolution blocks with each block containing a Conv2D layer, with `3x3` kernel size & stride 1. The number of filters at the `n-th` Conv layer is to `16n`. Dropout is applied at the input of last 2 conv blocks (prob=0.2). Batch Normalization is used to normalize the inputs to the nonlinear activation function. *LeakyReLU* is the activation function in the convolutional blocks. Finally, *Maxpool* with non-overlapping kernels
+of `2×2` is applied.
+
+**Recurrent Blocks**: Recurrent blocks are formed by bidirectional 1D-LSTM layers, that process the input image columnwise in left-to-right and right-to-left order. The output of the two directions
+is concatenated depth-wise. Dropout is also applied(prob=0.5). Number of hidden units in all LSTM layers `256`. Total number of recurrent blocks is 5.
+
+**Linear Layer**:  Finally, each column after the recurrent 1D-LSTM blocks must be mapped to an output label. The depth is transformed from `2D` to `L` using an affine transformation (L=characters+1)
+
+### Parameters
+1. RMSProp with learning rate - 0.0003
+2. Batch Size = 16
+
+### Augmentation
+Rotation, Translation, Scaling and Shearing (all performed as a single affine transform) and gray-scale erosion and dilation. Each of these operations is applied dynamically and independently on
+each image of the training batch (each with 0.5 probability). Thus, the exact same image is virtually never observed twice during training.
+
+![](https://imgur.com/Hrum8pX.png)
+
+## [An End-to-End Trainable Neural Network for Image-based Sequence Recognition and Its Application to Scene Text Recognition](https://arxiv.org/pdf/1507.05717.pdf)
 CRNN model consists of CNN & RNN blocks along with a Transcription Layer.
 * CNN Block - Three convolution blocks (7 conv layers) & maxpool layer. Extracts features from image.
 * RNN Block - Two Bidirectional LSTM layers. Splits features into some feature sequences & pass it to recurrent layers
@@ -68,7 +89,7 @@ poetry run python eval.py
 Supports *Greedy* as well *Beam Search Decoding* based on choice. Set `greedy=False` in `make_submission` function for BeamSearch Decoding.
 
 ## Result
-I ran multiple experiments with varying degrees of image size, model depth, number of epoch, etc. The following configuration worked the best -
+The first architecture described above performed better than the second one. Once that was decided I ran multiple experiments with varying degrees of image size, model depth, number of epoch, etc. The following configuration worked the best -
 
 * BATCH_SIZE - 16
 * EPOCHS - 20
@@ -79,26 +100,35 @@ I ran multiple experiments with varying degrees of image size, model depth, numb
 ### Word Level - Training & Validation Loss
 ![](resources/losses.png)
 
-### Word Level - Training & Validation Data Prediction
+### Test Data Prediction
 ![](resources/predictions.png)
 
-### Test Data Prediction
-![](resources/TestDataPrediction.png)
-
-### Other Metrics
+### Word Level Metrics
 | Metric | Training | Validation |
 --- | --- | ---
-|Accuracy|0.5474|0.5382|
-|Levenhstein Distance|0.8808|0.9122|
+|Accuracy|0.8162|0.7392|
+|Levenhstein Distance|0.3192|0.5001|
+|Character Error Rate|7.2515|11.3602|
+
+### Sentence Level Metrics
+* Accuracy - 0.326 (Surprising?)
+* Levenhstein Distance - 2.15
+* Character Error Rate - 6.77
 
 ### Kaggle LeaderBoard
-*Public LeaderBoard*
-![Public LeaderBoard](resources/public_lb.png)
+![](resources/leaderboard.png)
 
-*Private LeaderBoard*
-![Private LeaderBoard](resources/private_lb.png)
+* Next Best Private LB - 4.54741
+* Next Best Public LB - 4.29530
+
+## What didn't work
+1. Training for longer epochs didn't work. All of the runs EarlyStopped
+2. Centering the image & center cropping didn't work
+3. Larger Image size - 350x800 performed poorly then 250x600
+4. Increasing number of characters from 8 to 10 gave better scores, however at 12, the score got poorer
+5. Most of the time leaderboard score for GreedySearch was better than BeamSearch
 
 ## Next Steps
-1. Train Deeper Model
-2. Add Spatial Transformer Network Component
-3. Centering the image somehow didn't work
+1. Add Spatial Transformer Network Component
+2. https://arxiv.org/pdf/1904.09150.pdf
+3. https://arxiv.org/abs/2012.04961
