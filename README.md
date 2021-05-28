@@ -102,3 +102,5 @@ I ran multiple experiments with varying degrees of image size, model depth, numb
 1. Train Deeper Model
 2. Add Spatial Transformer Network Component
 3. Centering the image somehow didn't work
+4. Implementing ["Are Multidimensional Recurrent Layers Really
+Necessary for Handwritten Text Recognition?"](http://www.jpuigcerver.net/pubs/jpuigcerver_icdar2017.pdf)
